@@ -10,6 +10,12 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
       TZ: ${OPENCLAW_TZ:-UTC}
+      XAI_API_KEY: ${XAI_API_KEY}
+      ANTHROPIC_OAUTH_TOKEN: ${ANTHROPIC_OAUTH_TOKEN}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      GATEWAY_AUTH_TOKEN: ${GATEWAY_AUTH_TOKEN}
+      RCLONE_CONFIG: /home/node/.openclaw/rclone.conf
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
@@ -22,20 +28,11 @@ services:
     # group_add:
     #   - "${DOCKER_GID:-999}"
     ports:
-      - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
-      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+    - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+    - "127.0.0.1:18792:18793"
     init: true
     restart: unless-stopped
-    command:
-      [
-        "node",
-        "dist/index.js",
-        "gateway",
-        "--bind",
-        "${OPENCLAW_GATEWAY_BIND:-lan}",
-        "--port",
-        "18789",
-      ]
+    command: ["sh", "-c", "unset ANTHROPIC_API_KEY && node /home/node/.openclaw/workspace/relay-proxy.js & exec node dist/index.js gateway --bind lan --port 18789"]
     healthcheck:
       test:
         [
@@ -67,6 +64,8 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
       TZ: ${OPENCLAW_TZ:-UTC}
+      XAI_API_KEY: ${XAI_API_KEY}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY}
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
