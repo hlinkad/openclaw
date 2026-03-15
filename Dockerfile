@@ -183,6 +183,15 @@ RUN --mount=type=cache,id=openclaw-bookworm-apt-cache,target=/var/cache/apt,shar
       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $OPENCLAW_DOCKER_APT_PACKAGES; \
     fi
 
+# Python deps for agent skills (Dropbox API, vector DB)
+ARG OPENCLAW_INSTALL_PYTHON_DEPS=""
+RUN if [ -n "$OPENCLAW_INSTALL_PYTHON_DEPS" ]; then \
+ apt-get update && \
+ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-pip && \
+ pip3 install --no-cache-dir --break-system-packages \
+ requests==2.31.0 httpx==0.27.0 qdrant-client==1.9.1 numpy==1.26.4 && \
+ rm -rf /var/lib/apt/lists/*; \
+ fi
 # Optionally install Chromium and Xvfb for browser automation.
 # Build with: docker build --build-arg OPENCLAW_INSTALL_BROWSER=1 ...
 # Adds ~300MB but eliminates the 60-90s Playwright install on every container start.
