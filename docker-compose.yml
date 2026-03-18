@@ -16,7 +16,9 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       GATEWAY_AUTH_TOKEN: ${GATEWAY_AUTH_TOKEN}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      DROPBOX_ACCESS_TOKEN: ${DROPBOX_ACCESS_TOKEN}
+      DROPBOX_APP_KEY: ${DROPBOX_APP_KEY}
+      DROPBOX_APP_SECRET: ${DROPBOX_APP_SECRET}
+      DROPBOX_REFRESH_TOKEN: ${DROPBOX_REFRESH_TOKEN}
       RCLONE_CONFIG: /home/node/.openclaw/rclone.conf
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
@@ -27,11 +29,14 @@ services:
       ## scripts/docker/setup.sh with OPENCLAW_SANDBOX=1 for automated setup.
       ## Set DOCKER_GID to the host's docker group GID (run: stat -c '%g' /var/run/docker.sock).
       # - /var/run/docker.sock:/var/run/docker.sock
+    # - /var/run/docker.sock:/var/run/docker.sock
     # group_add:
-    #   - "${DOCKER_GID:-999}"
+    # - "${DOCKER_GID:-999}"
     ports:
-    - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
-    - "127.0.0.1:18792:18793"
+      - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+      - "127.0.0.1:18792:18793"
+    networks:
+      - openclaw-net
     init: true
     restart: unless-stopped
     command: ["sh", "-c", "unset ANTHROPIC_API_KEY && node /home/node/.openclaw/workspace/relay-proxy.js & exec node dist/index.js gateway --bind lan --port 18789"]
@@ -47,6 +52,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    networks:
+      - openclaw-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:6333/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
@@ -78,3 +100,12 @@ services:
     entrypoint: ["node", "dist/index.js"]
     depends_on:
       - openclaw-gateway
+
+volumes:
+  qdrant-data:
+    name: qdrant-data
+
+networks:
+  openclaw-net:
+    name: openclaw-net
+    driver: bridge
