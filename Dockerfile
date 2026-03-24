@@ -252,6 +252,12 @@ RUN apt-get update && \
         sentence-transformers && \
     rm -rf /var/lib/apt/lists/*
 
+# PDF parsing
+RUN pip install pymupdf4llm --break-system-packages
+
+# Semantic memory search
+RUN npm install -g @tobilu/qmd
+
 # Expose the CLI binary without requiring npm global writes as non-root.
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
  && chmod 755 /app/openclaw.mjs
