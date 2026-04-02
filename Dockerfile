@@ -246,7 +246,11 @@ RUN --mount=type=cache,id=openclaw-bookworm-apt-cache,target=/var/cache/apt,shar
     fi
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-pip && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    ffmpeg && \
     pip3 install --no-cache-dir --break-system-packages \
         requests==2.31.0 \
         httpx==0.27.0 \
@@ -254,8 +258,9 @@ RUN apt-get update && \
         numpy==1.26.4 \
         pyyaml \
         python-docx \
-        sentence-transformers && \
-    rm -rf /var/lib/apt/lists/*
+        sentence-transformers \
+faster-whisper==1.1.1 && \
+rm -rf /var/lib/apt/lists/*
 
 # PDF parsing
 RUN pip install pymupdf4llm --break-system-packages
@@ -272,7 +277,7 @@ ENV NODE_ENV=production
 # Security hardening: Run as non-root user
 # The node:24-bookworm image includes a 'node' user (uid 1000)
 # This reduces the attack surface by preventing container escape via root privileges
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code context-mode
 # Fix world-writable permissions on extensions and skills
 RUN chmod -R 755 /app/extensions /app/skills
 USER node
